@@ -1,11 +1,9 @@
-import type React from "react";
-
 import { Button } from "@/components/ui/button";
-import { Shield, Sparkles, Zap } from "lucide-react";
+import { ShieldCheck, Sparkles, Zap } from "lucide-react";
 import ImageProcessor from "./components/ImageProcessor";
 import CarouselDisplay from "./components/CarouselDisplay";
 
-export default function Home() {
+export default function App() {
   const scrollToApp = () => {
     document.getElementById("app-section")?.scrollIntoView({
       behavior: "smooth",
@@ -13,18 +11,20 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="bg-gradient-to-br from-purple-100 via-white to-blue-100">
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 md:py-24">
+      <section className="container mx-auto px-4 py-12 md:py-24">
         <div className="text-center space-y-8">
-          <div className="space-y-4">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Remove Foreground
-            </h1>
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-800">
-              In One Click, All Free
-            </h2>
-          </div>
+          <h1
+            className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
+            style={{ lineHeight: "normal" }}
+          >
+            Remove Foreground
+          </h1>
+
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-800">
+            In One Click, All Free
+          </h2>
 
           <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Revolutionary AI technology that intelligently removes foreground
@@ -36,13 +36,12 @@ export default function Home() {
             <Button
               onClick={scrollToApp}
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 text-lg"
+              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 text-lg cursor-pointer"
             >
               <Sparkles className="mr-2 h-5 w-5" />
               Try It Now
             </Button>
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Shield className="h-4 w-4" />
               No signup required • 100% free
             </div>
           </div>
@@ -70,7 +69,7 @@ export default function Home() {
           </div>
           <div className="text-center space-y-3">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <Shield className="h-6 w-6 text-green-600" />
+              <ShieldCheck className="h-6 w-6 text-green-600" />
             </div>
             <h3 className="font-semibold text-lg">Privacy First</h3>
             <p className="text-gray-600">
