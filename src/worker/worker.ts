@@ -1,24 +1,6 @@
 import { ImageSegmentationPipeline, pipeline } from "@huggingface/transformers";
 
-export interface WorkerInputData {
-  taskId: number;
-  imageBitmap: ImageBitmap;
-}
-
-export type WorkerOutputMessage = { taskId: number } & (
-  | {
-      type: "result";
-      img: string; // data url
-    }
-  | {
-      type: "progress";
-      progress: number;
-    }
-  | {
-      type: "error";
-      error: string;
-    }
-);
+import { type WorkerInputData, type WorkerOutputMessage } from "./types";
 
 let SEGMENTER: ImageSegmentationPipeline | null = null;
 const CANVAS = new OffscreenCanvas(0, 0);
@@ -32,7 +14,7 @@ async function initSegmenter(
 ): Promise<ImageSegmentationPipeline> {
   if (SEGMENTER === null) {
     SEGMENTER = await pipeline("image-segmentation", "briaai/RMBG-1.4", {
-      dtype: "fp16",
+      dtype: "fp32",
       progress_callback(progress) {
         if (progress.status === "progress") {
           sendMessage({
@@ -53,15 +35,16 @@ async function initSegmenter(
   return SEGMENTER;
 }
 
-async function segment(imageBitmap: ImageBitmap, taskId: number) {
+async function segment(file: File, taskId: number) {
   // draw to canvas
-  CANVAS.width = imageBitmap.width;
-  CANVAS.height = imageBitmap.height;
+  const imgBitmap = await createImageBitmap(file);
+  CANVAS.width = imgBitmap.width;
+  CANVAS.height = imgBitmap.height;
   const ctx = CANVAS.getContext("2d");
   if (ctx === null) {
     throw new Error("Browser doesn't support 2d canvas context");
   }
-  ctx.drawImage(imageBitmap, 0, 0);
+  ctx.drawImage(imgBitmap, 0, 0);
 
   // run model
   const segmenter = await initSegmenter(taskId);
@@ -73,7 +56,7 @@ async function segment(imageBitmap: ImageBitmap, taskId: number) {
 
   // apply mask
   for (let i = 0; i < maskData.length; i++) {
-    if (maskData[i] === 0) {
+    if (maskData[i] < 0.5) {
       imgData.data[i * 4 + 3] = 0;
     }
   }
@@ -97,7 +80,7 @@ onmessage = (e: MessageEvent<WorkerInputData>) => {
 
   const inputData = e.data;
 
-  segment(inputData.imageBitmap, inputData.taskId).catch((e) => {
+  segment(inputData.file, inputData.taskId).catch((e) => {
     sendMessage({
       taskId: inputData.taskId,
       type: "error",

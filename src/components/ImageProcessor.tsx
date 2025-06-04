@@ -1,13 +1,14 @@
-import Worker from "@/worker?worker";
+import { type WorkerOutputMessage } from "@/worker/types";
+import Worker from "@/worker/worker?worker";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Download, Sparkles, Upload } from "lucide-react";
 import { default as React, useState } from "react";
-import { loadImageFromURL } from "@/lib/utils";
+import { Spinner } from "./ui/spinner";
 
-const CANVAS = document.createElement("canvas");
+let TASK_ID = 0;
 
 export default function ImageProcessor() {
   const [dragActive, setDragActive] = useState(false);
@@ -17,6 +18,19 @@ export default function ImageProcessor() {
   const [error, setError] = useState<string | null>(null);
 
   const worker = new Worker();
+  worker.onmessage = (e: MessageEvent<WorkerOutputMessage>) => {
+    if (e.data.taskId !== TASK_ID) {
+      return;
+    }
+
+    if (e.data.type === "result") {
+      setResultImage(e.data.img);
+    } else if (e.data.type === "progress") {
+      setProgress(e.data.progress);
+    } else if (e.data.type === "error") {
+      setError(e.data.error);
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -43,18 +57,20 @@ export default function ImageProcessor() {
   };
 
   const processFile = async (file: File) => {
-    // remove old images
+    // remove old images and set new ones
     if (uploadedImage !== null) {
       URL.revokeObjectURL(uploadedImage);
     }
+    setUploadedImage(URL.createObjectURL(file));
+
     if (resultImage !== null) {
       URL.revokeObjectURL(resultImage);
       setResultImage(null);
     }
 
-    // display uploaded image
-    const fileURL = URL.createObjectURL(file);
-    setUploadedImage(fileURL);
+    // submit task to worker
+    const taskId = ++TASK_ID;
+    worker.postMessage({ taskId, file });
   };
 
   return (
@@ -74,7 +90,9 @@ export default function ImageProcessor() {
           <Card className="border-2 border-dashed border-gray-300 hover:border-purple-400 transition-colors">
             <CardContent className="p-8">
               <div
-                className={`relative h-64 md:h-80 rounded-lg border-2 border-dashed transition-all duration-200 ${
+                className={`relative ${
+                  !uploadedImage && "min-h-64 md:min-h-80"
+                } rounded-lg border-2 border-dashed transition-all duration-200 ${
                   dragActive
                     ? "border-purple-500 bg-purple-50"
                     : "border-gray-300 hover:border-gray-400"
@@ -84,13 +102,6 @@ export default function ImageProcessor() {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileInput}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-
                 {uploadedImage ? (
                   <img
                     src={uploadedImage || "/placeholder.svg"}
@@ -98,7 +109,7 @@ export default function ImageProcessor() {
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center h-full text-gray-500">
                     <Upload className="h-12 w-12 mb-4" />
                     <p className="text-lg font-medium mb-2">
                       Drop your image here
@@ -109,15 +120,40 @@ export default function ImageProcessor() {
                     </p>
                   </div>
                 )}
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileInput}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
               </div>
 
               {uploadedImage && (
                 <div className="mt-4 space-y-3">
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>Processing...</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <Progress value={progress} className="w-full" />
+                  {(error && <span>Error: {error}</span>) ||
+                    (progress !== 100 && (
+                      <React.Fragment>
+                        <div className="flex items-center justify-between text-sm text-gray-600">
+                          <span>Initializing...</span>
+                          <span>{progress.toFixed(2)}%</span>
+                        </div>
+                        <Progress value={progress} className="w-full" />
+                      </React.Fragment>
+                    )) ||
+                    (!resultImage && (
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>Processing...</span>
+                        <Spinner />
+                      </div>
+                    )) ||
+                    (resultImage && (
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span className="text-green-600 font-bold">
+                          Completed!
+                        </span>
+                      </div>
+                    ))}
                 </div>
               )}
             </CardContent>
@@ -126,7 +162,11 @@ export default function ImageProcessor() {
           {/* Result Area */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-8 h-full flex flex-col">
-              <div className="basis-64 md:basis-80 flex-1 rounded-lg bg-gray-50 border-2 border-gray-200 flex flex-col items-center justify-center">
+              <div
+                className={`flex-1 rounded-lg bg-gray-50 border-2 border-gray-200 flex flex-col items-center justify-center ${
+                  !resultImage && "py-4"
+                }`}
+              >
                 {!uploadedImage && (
                   <div className="text-center space-y-4">
                     <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto">
@@ -147,14 +187,14 @@ export default function ImageProcessor() {
                       AI is processing your image...
                     </p>
                     <p className="text-gray-600 mt-4">
-                      This usually takes a few seconds
+                      This will take a minute. Longer if not initialized
                     </p>
                   </div>
                 )}
 
                 {resultImage && (
                   <img
-                    src={resultImage || "/placeholder.svg"}
+                    src={resultImage}
                     alt="Result"
                     className="object-cover rounded-lg"
                   />
