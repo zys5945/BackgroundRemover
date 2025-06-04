@@ -35,17 +35,8 @@ export default function ImageProcessor() {
   const handleDrag = (e: React.DragEvent) => {
     if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === "dragleave") {
+    } else if (e.type === "dragleave" || e.type === "dragend") {
       setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    setDragActive(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files[0]) {
-      processFile(files[0]);
     }
   };
 
@@ -100,7 +91,7 @@ export default function ImageProcessor() {
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
-                onDrop={handleDrop}
+                onDrop={handleDrag}
               >
                 {uploadedImage ? (
                   <img

@@ -56,9 +56,7 @@ async function segment(file: File, taskId: number) {
 
   // apply mask
   for (let i = 0; i < maskData.length; i++) {
-    if (maskData[i] < 0.5) {
-      imgData.data[i * 4 + 3] = 0;
-    }
+    imgData.data[i * 4 + 3] = maskData[i];
   }
 
   // write masked image back to context and convert it to data url
