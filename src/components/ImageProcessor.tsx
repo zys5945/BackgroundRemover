@@ -1,18 +1,24 @@
-import type React from "react";
-import { useState } from "react";
+import Worker from "@/worker?worker";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Upload, Download, Sparkles } from "lucide-react";
+import { Download, Sparkles, Upload } from "lucide-react";
+import { default as React, useState } from "react";
+import { loadImageFromURL } from "@/lib/utils";
+
+const CANVAS = document.createElement("canvas");
 
 export default function ImageProcessor() {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [resultImage, setResultImage] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const worker = new Worker();
 
   const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
     } else if (e.type === "dragleave") {
@@ -21,32 +27,34 @@ export default function ImageProcessor() {
   };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
     setDragActive(false);
 
     const files = e.dataTransfer.files;
     if (files && files[0]) {
-      const file = files[0];
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setUploadedImage(e.target?.result as string);
-        };
-        reader.readAsDataURL(file);
-      }
+      processFile(files[0]);
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files && files[0]) {
+      processFile(files[0]);
     }
+  };
+
+  const processFile = async (file: File) => {
+    // remove old images
+    if (uploadedImage !== null) {
+      URL.revokeObjectURL(uploadedImage);
+    }
+    if (resultImage !== null) {
+      URL.revokeObjectURL(resultImage);
+      setResultImage(null);
+    }
+
+    // display uploaded image
+    const fileURL = URL.createObjectURL(file);
+    setUploadedImage(fileURL);
   };
 
   return (
@@ -117,21 +125,9 @@ export default function ImageProcessor() {
 
           {/* Result Area */}
           <Card className="border-2 border-gray-200">
-            <CardContent className="p-8">
-              <div className="h-64 md:h-80 rounded-lg bg-gray-50 border-2 border-gray-200 flex flex-col items-center justify-center">
-                {uploadedImage ? (
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
-                      <Sparkles className="h-8 w-8 text-purple-600 animate-pulse" />
-                    </div>
-                    <p className="text-gray-600">
-                      AI is processing your image...
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      This usually takes a few seconds
-                    </p>
-                  </div>
-                ) : (
+            <CardContent className="p-8 h-full flex flex-col">
+              <div className="basis-64 md:basis-80 flex-1 rounded-lg bg-gray-50 border-2 border-gray-200 flex flex-col items-center justify-center">
+                {!uploadedImage && (
                   <div className="text-center space-y-4">
                     <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto">
                       <Download className="h-8 w-8 text-gray-400" />
@@ -140,6 +136,28 @@ export default function ImageProcessor() {
                       Processed image will appear here
                     </p>
                   </div>
+                )}
+
+                {uploadedImage && !resultImage && (
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
+                      <Sparkles className="h-8 w-8 text-purple-600 animate-pulse" />
+                    </div>
+                    <p className="text-gray-600 mt-8">
+                      AI is processing your image...
+                    </p>
+                    <p className="text-gray-600 mt-4">
+                      This usually takes a few seconds
+                    </p>
+                  </div>
+                )}
+
+                {resultImage && (
+                  <img
+                    src={resultImage || "/placeholder.svg"}
+                    alt="Result"
+                    className="object-cover rounded-lg"
+                  />
                 )}
               </div>
 
