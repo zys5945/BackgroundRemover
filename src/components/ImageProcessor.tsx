@@ -64,6 +64,12 @@ export default function ImageProcessor() {
     worker.postMessage({ taskId, file });
   };
 
+  const previewResult = () => {
+    if (resultImage !== null) {
+      window.open(resultImage);
+    }
+  };
+
   return (
     <section id="app-section" className="container mx-auto px-4 py-12">
       <div className="text-center mb-12">
@@ -125,7 +131,7 @@ export default function ImageProcessor() {
                   {(error && <span>Error: {error}</span>) ||
                     (progress !== 100 && (
                       <React.Fragment>
-                        <div className="flex items-center justify-between text-sm text-gray-600">
+                        <div className="flex items-center justify-between text-lg text-gray-600">
                           <span>Initializing...</span>
                           <span>{progress.toFixed(2)}%</span>
                         </div>
@@ -133,17 +139,15 @@ export default function ImageProcessor() {
                       </React.Fragment>
                     )) ||
                     (!resultImage && (
-                      <div className="flex items-center justify-between text-sm text-gray-600">
+                      <div className="flex items-center justify-between text-lg text-gray-600">
                         <span>Processing...</span>
                         <Spinner />
                       </div>
                     )) ||
                     (resultImage && (
-                      <div className="flex items-center justify-between text-sm text-gray-600">
-                        <span className="text-green-600 font-bold">
-                          Completed!
-                        </span>
-                      </div>
+                      <span className="table mx-auto mt-6 text-lg text-green-600 font-bold">
+                        Completed!
+                      </span>
                     ))}
                 </div>
               )}
@@ -194,12 +198,30 @@ export default function ImageProcessor() {
 
               {uploadedImage && (
                 <div className="mt-6 flex gap-3">
-                  <Button variant="outline" className="flex-1">
+                  <Button
+                    variant="outline"
+                    className={`flex-1 ${
+                      resultImage ? "cursor-pointer" : "cursor-not-allowed"
+                    }`}
+                    disabled={!resultImage}
+                    onClick={previewResult}
+                  >
                     Preview
                   </Button>
-                  <Button className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
+                  <Button
+                    className={`flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 cusor-pointer ${
+                      resultImage ? "cursor-pointer" : "cursor-not-allowed"
+                    }`}
+                    disabled={!resultImage}
+                    asChild
+                  >
+                    <a
+                      href={resultImage!}
+                      download={Math.random().toString(16).slice(2) + ".png"}
+                    >
+                      <Download />
+                      Download
+                    </a>
                   </Button>
                 </div>
               )}
