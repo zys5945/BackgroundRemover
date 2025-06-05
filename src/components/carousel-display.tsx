@@ -7,23 +7,32 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
 
+import BeachBeforeURL from "public/carousel/beach-before.jpg";
+import BeachAfterURL from "public/carousel/beach-after.png";
+import GiraffeBeforeURL from "public/carousel/giraffe-before.jpg";
+import GiraffeAfterURL from "public/carousel/giraffe-after.png";
+import SeaBeforeURL from "public/carousel/sea-before.jpg";
+import SeaAfterURL from "public/carousel/sea-after.png";
+import TwoPeopleBeforeURL from "public/carousel/two-people-before.jpg";
+import TwoPeopleAfterURL from "public/carousel/two-people-after.png";
+
 export default function CarouselDisplay() {
   const carouselItems = [
     {
-      before: "/carousel/beach-before.jpg",
-      after: "/carousel/beach-after.png",
+      before: BeachBeforeURL,
+      after: BeachAfterURL,
     },
     {
-      before: "/carousel/giraffe-before.jpg",
-      after: "/carousel/giraffe-after.png",
+      before: GiraffeBeforeURL,
+      after: GiraffeAfterURL,
     },
     {
-      before: "/carousel/sea-before.jpg",
-      after: "/carousel/sea-after.png",
+      before: SeaBeforeURL,
+      after: SeaAfterURL,
     },
     {
-      before: "/carousel/two-people-before.jpg",
-      after: "/carousel/two-people-after.png",
+      before: TwoPeopleBeforeURL,
+      after: TwoPeopleAfterURL,
     },
   ];
 
