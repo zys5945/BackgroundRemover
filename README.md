@@ -2,6 +2,8 @@
 
 This project is a web application that removes the background from images using a machine learning model.
 
+https://zys5945.github.io/BackgroundRemover/
+
 ## Running locally
 
 1.  Clone the repository:
