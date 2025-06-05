@@ -2,7 +2,8 @@ import { ImageSegmentationPipeline, pipeline } from "@huggingface/transformers";
 
 import { type WorkerInputData, type WorkerOutputMessage } from "./types";
 
-let SEGMENTER: ImageSegmentationPipeline | null = null;
+// @ts-expect-error explicitly naming the type will lead to TS2590: Expression produces a union type that is too complex to represent.
+let SEGMENTER = null;
 const CANVAS = new OffscreenCanvas(0, 0);
 
 function sendMessage(message: WorkerOutputMessage) {
@@ -12,10 +13,11 @@ function sendMessage(message: WorkerOutputMessage) {
 async function initSegmenter(
   taskId: number
 ): Promise<ImageSegmentationPipeline> {
+  // @ts-expect-error see SEGMENTER
   if (SEGMENTER === null) {
     SEGMENTER = await pipeline("image-segmentation", "briaai/RMBG-1.4", {
       dtype: "fp32",
-      progress_callback(progress) {
+      progress_callback: (progress) => {
         if (progress.status === "progress") {
           sendMessage({
             taskId,
@@ -32,6 +34,7 @@ async function initSegmenter(
       },
     });
   }
+  // @ts-expect-error see SEGMENTER
   return SEGMENTER;
 }
 
